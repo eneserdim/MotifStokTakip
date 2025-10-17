@@ -1,1 +1,1 @@
-# MotifStokTakip
+# Stok Takip ve Servis Uygulaması
