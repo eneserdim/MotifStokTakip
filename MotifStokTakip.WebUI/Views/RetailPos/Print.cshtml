@@ -1,0 +1,118 @@
+﻿@model MotifStokTakip.WebUI.Controllers.RetailSaleDetailsVM
+@{
+    Layout = null; // Tam sayfa çıktıya uygun
+    var subtotal = (decimal)(ViewBag.Subtotal ?? 0m);
+    var date = Model.Sale.CreatedAt.ToLocalTime();
+    var customer = Model.Sale.CustomerId != null
+        ? (Model.Sale.Customer?.FullName ?? Model.Sale.Customer?.CompanyName ?? "Cari")
+        : (Model.Sale.WalkInCustomerName ?? "Sisteme Kayıtlı Olmayan Cari");
+}
+
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<title>Satış #@Model.Sale.Id - Fiş/Fatura</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+    :root {
+        --text:#111; --muted:#6c757d; --line:#e5e7eb;
+        --accent:#111827;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    }
+    html, body { font-family: var(--font); color:var(--text); margin:0; background:#fff; }
+    .sheet { width: 210mm; min-height: 297mm; margin:0 auto; padding:16mm 14mm; box-sizing:border-box; }
+    h1,h2,h3,h4,h5 { margin:0; }
+    .row { display:flex; gap:16px; }
+    .grow { flex:1; }
+    .muted { color:var(--muted); }
+    .card { border:1px solid var(--line); border-radius:8px; padding:14px; }
+    table { width:100%; border-collapse: collapse; margin-top:12px; }
+    th, td { border-bottom:1px solid var(--line); padding:8px; text-align:left; }
+    th { background:#f8fafc; }
+    tfoot th, tfoot td { border-top:2px solid var(--line); border-bottom:none; }
+    .right { text-align:right; }
+    .btns { position:sticky; top:0; background:#fff; padding:8px 0 12px; }
+    .btn { display:inline-block; padding:8px 12px; border:1px solid var(--line); border-radius:6px; text-decoration:none; color:#111; margin-right:8px; }
+    .btn.primary { background:#111827; color:#fff; border-color:#111827; }
+    @@media print {
+        .btns { display:none !important; }
+        .sheet { padding:10mm 10mm; }
+        a { color:inherit; text-decoration:none; }
+    }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+    <!-- üstte sadece ekranda gözüken butonlar -->
+    <div class="btns">
+        <a href="javascript:window.print()" class="btn primary">Yazdır</a>
+        <a href="javascript:window.close()" class="btn">Kapat</a>
+    </div>
+
+    <div class="row" style="margin-bottom:18px">
+        <div class="grow">
+            <h2>Motif Otomotiv</h2>
+        </div>
+        <div style="text-align:right">
+            <h3>Satış #@Model.Sale.Id</h3>
+            <div class="muted">@date.ToString("dd.MM.yyyy HH:mm")</div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-bottom:12px">
+        <div class="grow card">
+            <div class="muted" style="font-size:12px; margin-bottom:4px;">Müşteri</div>
+            <div style="font-size:15px; font-weight:600">@customer</div>
+            @* istersen telefon/adres de basabilirsin *@
+        </div>
+        <div class="card" style="min-width:220px">
+            <div class="muted" style="font-size:12px; margin-bottom:4px;">Özet</div>
+            <div>Ara Toplam: <strong>@subtotal.ToString("N2") ₺</strong></div>
+            @* İstersen ödeme tipi / ödendi bilgisi burada *@
+        </div>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th style="width:46%">Ürün / Kalem</th>
+                <th class="right" style="width:12%">Adet</th>
+                <th class="right" style="width:18%">Birim Fiyat</th>
+                <th class="right" style="width:24%">Tutar</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var l in Model.Lines)
+            {
+                var lineTotal = l.SellPrice * l.Quantity;
+                <tr>
+                    <td>@(string.IsNullOrWhiteSpace(l.ItemName) ? l.Product?.Name : l.ItemName)</td>
+                    <td class="right">@l.Quantity</td>
+                    <td class="right">@l.SellPrice.ToString("N2") ₺</td>
+                    <td class="right">@lineTotal.ToString("N2") ₺</td>
+                </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr>
+                <th colspan="3" class="right">Ara Toplam</th>
+                <th class="right">@subtotal.ToString("N2") ₺</th>
+            </tr>
+            </tfoot>
+        </table>
+
+        <div class="muted" style="margin-top:10px; font-size:12px">
+            Not: Bu belge satış fişi olarak düzenlenmiştir.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sayfa yeni pencerede açıldıysa otomatik yazdırmak istersen:
+    // window.addEventListener('load', () => setTimeout(() => window.print(), 200));
+</script>
+</body>
+</html>

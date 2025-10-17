@@ -1,0 +1,29 @@
+﻿@model MotifStokTakip.Model.Entities.Technician
+@{
+    ViewData["Title"] = "Yeni Usta";
+}
+<h4 class="mb-3">Yeni Usta</h4>
+
+<form asp-action="Create" method="post" class="card p-3">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label">Ad Soyad</label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="IsActive" class="form-check-input" />
+        <label class="form-check-label" asp-for="IsActive">Aktif</label>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Index">Liste</a>
+        <button class="btn btn-primary">Kaydet</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

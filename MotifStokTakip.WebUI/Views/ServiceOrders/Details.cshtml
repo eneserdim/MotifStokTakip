@@ -1,0 +1,222 @@
+﻿@model MotifStokTakip.Model.Entities.ServiceOrder
+@using MotifStokTakip.Model.Enums
+@using MotifStokTakip.Model.Entities
+@{
+    ViewData["Title"] = "Servis Detayı";
+
+    // Usta gösterimi için sıralı liste
+    var techLinks = (Model.Technicians ?? new List<ServiceOrderTechnician>())
+                    .OrderByDescending(t => t.IsPrimary)
+                    .Select(t => t.Technician?.FullName ?? "")
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
+    var techniciansDisplay = techLinks.Any() ? string.Join(", ", techLinks) : "—";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Servis #@Model.Id</h4>
+    <div>
+        <a class="btn btn-outline-secondary" href="@Url.Action("Index")">Liste</a>
+        <a class="btn btn-primary" href="@Url.Action("CreateInvoice", new { id = Model.Id })">Fatura Oluştur</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card p-3">
+            <h5>Genel</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="text-muted">Müşteri</div>
+                    <div class="fw-semibold">@Model.Customer.FullName</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted">Araç</div>
+                    <div class="fw-semibold">@Model.Vehicle.Plate - @Model.Vehicle.Brand @Model.Vehicle.Model</div>
+                </div>
+                <div class="col-md-6 mt-2">
+                    <div class="text-muted">Usta</div>
+                    <div class="fw-semibold">@techniciansDisplay</div>
+                </div>
+                <div class="col-md-6 mt-2">
+                    <div class="text-muted">Durum</div>
+                    <div class="fw-semibold">@Model.Status</div>
+                </div>
+            </div>
+            <hr />
+            <div class="mb-2 text-muted">Şikayet</div>
+            <div class="p-2 bg-light rounded">@Model.ComplaintText</div>
+            @if (!string.IsNullOrWhiteSpace(Model.DoneWorksText))
+            {
+                <div class="mt-3 mb-2 text-muted">Yapılan İşlemler</div>
+                <div class="p-2 bg-light rounded">@Model.DoneWorksText</div>
+            }
+        </div>
+
+        <div class="card p-3 mt-3">
+            <h5>Usta / Durum</h5>
+
+            @* ---- USTA ATAMA ---- *@
+            <form class="row g-2" method="post" asp-action="AssignTechnician">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="col-md-8">
+                    <select class="form-select" name="technicianId" required>
+                        <option value="">— Usta seçin —</option>
+                        @foreach (var t in (IEnumerable<Technician>)ViewBag.Technicians ?? Enumerable.Empty<Technician>())
+                        {
+                            <option value="@t.Id">@t.FullName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-auto d-flex align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="primaryTech" name="primary" checked />
+                        <label class="form-check-label" for="primaryTech">Ana usta</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-secondary w-100">Usta Kaydet</button>
+                </div>
+            </form>
+
+            @* Atanmış ustalar: rozet + kaldır *@
+            <div class="mt-3">
+                @if (Model.Technicians != null && Model.Technicians.Any())
+                {
+                    foreach (var x in Model.Technicians.OrderByDescending(t => t.IsPrimary))
+                    {
+                        <span class="badge bg-dark rounded-pill me-1 mb-1">
+                            @x.Technician.FullName
+                            @if (x.IsPrimary)
+                            {
+                                <span class="badge bg-success ms-1">Ana</span>
+                            }
+                            <form asp-action="UnassignTechnician" method="post" class="d-inline ms-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="hidden" name="technicianId" value="@x.TechnicianId" />
+                                <button class="btn btn-sm btn-link text-warning p-0" title="Kaldır">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                        </span>
+                    }
+                }
+                else
+                {
+                    <span class="text-muted">Usta atanmadı.</span>
+                }
+            </div>
+
+            <hr class="my-3" />
+
+            @* ---- DURUM ---- *@
+            <form class="row g-2" method="post" action="@Url.Action("SetStatus")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="col-md-8">
+                    <select class="form-select" name="status">
+                        <option value="@ServiceStatus.ServiseAlindi" selected="@(Model.Status==ServiceStatus.ServiseAlindi)">Servise Alındı</option>
+                        <option value="@ServiceStatus.ServisTamamlandi" selected="@(Model.Status==ServiceStatus.ServisTamamlandi)">Servis Tamamlandı</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-outline-primary w-100">Durum Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card p-3">
+            <h5>Fotoğraflar</h5>
+            <form method="post" enctype="multipart/form-data" action="@Url.Action("UploadPhotos")" class="row g-2">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ServiceOrderId" value="@Model.Id" />
+                <div class="col-12">
+                    <input type="file" name="Files" multiple class="form-control" />
+                </div>
+                <div class="col-12 d-flex gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="IsBefore" value="true" checked />
+                        <label class="form-check-label">Önce</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="IsBefore" value="false" />
+                        <label class="form-check-label">Sonra</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-outline-secondary">Yükle</button>
+                </div>
+            </form>
+
+            <div class="mt-3">
+                <div class="text-muted">Yüklü Fotoğraflar</div>
+                <div class="row g-2 mt-1">
+                    @foreach (var p in Model.Photos?.OrderByDescending(x => x.Id) ?? Enumerable.Empty<ServicePhoto>())
+                    {
+                        <div class="col-6">
+                            <div class="border rounded p-1 text-center">
+                                <img src="@p.FilePath" style="width:100%;height:auto;" />
+                                <small class="d-block mt-1">@(p.IsBefore ? "ÖNCE" : "SONRA")</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Faturalar *@
+        <div class="card">
+            <div class="card-header">Faturalar</div>
+            <div class="card-body">
+                @foreach (var inv in Model.Invoices)   @* Invoices: IEnumerable<ServiceInvoice> *@
+                {
+                    <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                        <div>
+                            <div>
+                                <strong>Fatura #@inv.Id</strong>
+                                · Kalem: @inv.Items?.Count() ?? 0
+                                · Toplam: @inv.TotalAmount.ToString("N2") ₺
+                                · @inv.CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")
+                            </div>
+                            @if (!inv.IsPaid)
+                            {
+                                <span class="badge bg-warning text-dark">Ödeme Bekleniyor</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Ödeme Yapıldı</span>
+                            }
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <a class="btn btn-sm btn-outline-secondary"
+                               asp-controller="ServiceInvoices" asp-action="Pdf"
+                               asp-route-id="@inv.Id">PDF</a>
+
+                            @if (User.IsInRole("Admin") || User.IsInRole("Muhasebe"))
+                            {
+                                <form asp-controller="ServiceInvoices" asp-action="SetPaid" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@inv.Id" />
+                                    @if (!inv.IsPaid)
+                                    {
+                                        <input type="hidden" name="paid" value="true" />
+                                        <button class="btn btn-sm btn-success">Ödeme Yapıldı</button>
+                                    }
+                                    else
+                                    {
+                                        <input type="hidden" name="paid" value="false" />
+                                        <button class="btn btn-sm btn-outline-warning">Ödemeyi Kaldır</button>
+                                    }
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

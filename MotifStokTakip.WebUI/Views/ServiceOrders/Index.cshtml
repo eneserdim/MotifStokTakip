@@ -1,0 +1,146 @@
+﻿@model MotifStokTakip.WebUI.Controllers.ServiceOrdersController.ServiceOrderIndexVM
+@using MotifStokTakip.Model.Enums
+@{
+    ViewData["Title"] = "Servis Kayıtları";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Servis Kayıtları</h4>
+    <a class="btn btn-primary" asp-action="Create">Yeni Kayıt</a>
+</div>
+
+<!-- Sekmeler -->
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Status == null ? "active" : "")"
+           asp-action="Index"
+           asp-route-status="">Tümü</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Status == ServiceStatus.ServiseAlindi ? "active" : "")"
+           asp-action="Index"
+           asp-route-status="@ServiceStatus.ServiseAlindi"
+           asp-route-q="@Model.Q"
+           asp-route-from="@(Model.From?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(Model.To?.ToString("yyyy-MM-dd"))">Servise Alındı</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Status == ServiceStatus.ServisTamamlandi ? "active" : "")"
+           asp-action="Index"
+           asp-route-status="@ServiceStatus.ServisTamamlandi"
+           asp-route-q="@Model.Q"
+           asp-route-from="@(Model.From?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(Model.To?.ToString("yyyy-MM-dd"))">Tamamlandı</a>
+    </li>
+</ul>
+
+<!-- Filtreler -->
+<form method="get" class="card p-3 mb-3">
+    <input type="hidden" name="status" value="@(Model.Status?.ToString())" />
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label">Arama</label>
+            <input name="q" class="form-control" value="@Model.Q" placeholder="Müşteri, plaka, marka/model..." />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Başlangıç</label>
+            <input type="date" class="form-control" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Bitiş</label>
+            <input type="date" class="form-control" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" />
+        </div>
+
+        <!-- BUTONLAR -->
+        <div class="col-md-2 d-flex gap-2">
+            <button class="btn btn-primary w-100">Filtrele</button>
+            <a class="btn btn-outline-secondary w-100"
+               asp-action="Index"
+               asp-route-status="@(Model.Status?.ToString())">Temizle</a>
+        </div>
+    </div>
+</form>
+
+
+<table class="table table-striped table-hover align-middle" class="table table-hover align-middle">
+    <thead>
+        <tr>
+            <th style="width:80px">#</th>
+            <th>Müşteri</th>
+            <th>Araç</th>
+            <th>Usta</th>
+            <th>Durum</th>
+            <th>Oluşturma</th>
+            <th style="width:100px" class="text-end">İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Items.Any())
+        {
+            <tr><td colspan="7" class="text-muted">Kayıt bulunamadı.</td></tr>
+        }
+        else
+        {
+            @foreach (var o in Model.Items)
+            {
+                <tr>
+                    <td>@o.Id</td>
+                    <td>@o.Customer</td>
+                    <td>@o.Vehicle</td>
+                    <td>@o.Technician</td>
+                    <td>
+                        <span class="badge @(o.Status.Contains("Tamam") ? "bg-success" : o.Status.Contains("Alindi") ? "bg-warning text-dark" : "bg-secondary")">
+                            @o.Status
+                        </span>
+                    </td>
+                    <td>@o.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@o.Id">Detay</a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@{
+    var page = Model.Page;
+    var totalPages = Model.TotalPages;
+}
+@if (totalPages > 1)
+{
+    <nav>
+        <ul class="pagination pagination-sm justify-content-end">
+            <li class="page-item @(page<=1?"disabled":"")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-status="@(Model.Status?.ToString())"
+                   asp-route-q="@Model.Q"
+                   asp-route-from="@(Model.From?.ToString("yyyy-MM-dd"))"
+                   asp-route-to="@(Model.To?.ToString("yyyy-MM-dd"))"
+                   asp-route-page="@(page-1)">«</a>
+            </li>
+            @for (var i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i==page?"active":"")">
+                    <a class="page-link"
+                       asp-action="Index"
+                       asp-route-status="@(Model.Status?.ToString())"
+                       asp-route-q="@Model.Q"
+                       asp-route-from="@(Model.From?.ToString("yyyy-MM-dd"))"
+                       asp-route-to="@(Model.To?.ToString("yyyy-MM-dd"))"
+                       asp-route-page="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(page>=totalPages?"disabled":"")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-status="@(Model.Status?.ToString())"
+                   asp-route-q="@Model.Q"
+                   asp-route-from="@(Model.From?.ToString("yyyy-MM-dd"))"
+                   asp-route-to="@(Model.To?.ToString("yyyy-MM-dd"))"
+                   asp-route-page="@(page+1)">»</a>
+            </li>
+        </ul>
+    </nav>
+}

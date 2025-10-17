@@ -1,0 +1,89 @@
+﻿@model MotifStokTakip.WebUI.Models.ServiceInvoiceDetailViewModel
+@{
+    ViewData["Title"] = "Fatura Detayı";
+
+    // IsPaid özelliği modelde yoksa false kalır; varsa okunur
+    bool isPaid = false;
+    var isPaidProp = Model?.GetType().GetProperty("IsPaid");
+    if (isPaidProp != null)
+    {
+        var val = isPaidProp.GetValue(Model);
+        if (val is bool b) isPaid = b;
+    }
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <h4 class="mb-0">Fatura #@Model.InvoiceId</h4>
+
+        @* Modelde IsPaid varsa rozet göster *@
+        @if (isPaidProp != null)
+        {
+            <span class="badge @(isPaid ? "bg-success" : "bg-warning text-dark")">
+                @(isPaid ? "Ödeme Yapıldı" : "Ödeme Bekleniyor")
+            </span>
+        }
+    </div>
+
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary"
+           asp-controller="ServiceOrders"
+           asp-action="Details"
+           asp-route-id="@Model.ServiceOrderId">
+            Servis Emrine Git
+        </a>
+
+        <a class="btn btn-outline-dark"
+           asp-controller="ServiceOrders"
+           asp-action="InvoicePdf"
+           asp-route-id="@Model.InvoiceId"
+           target="_blank" rel="noopener">PDF</a>
+    </div>
+</div>
+
+<div class="card p-3 mb-3">
+    <div><strong>Tarih:</strong> @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+    <div><strong>Müşteri:</strong> @Model.CustomerName</div>
+    <div><strong>Araç:</strong> @Model.VehiclePlate @(" " + Model.VehicleBrandModel)</div>
+</div>
+
+<div class="card p-3">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle" class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Kalem</th>
+                    <th class="text-end">Adet</th>
+                    <th class="text-end">Birim Fiyat</th>
+                    <th class="text-end">Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items == null || !Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-muted">Kalem bulunamadı.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var x in Model.Items)
+                    {
+                        <tr>
+                            <td>@x.Name</td>
+                            <td class="text-end">@x.Qty</td>
+                            <td class="text-end">@x.UnitPrice.ToString("N2") ₺</td>
+                            <td class="text-end">@x.LineTotal.ToString("N2") ₺</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Genel Toplam</th>
+                    <th class="text-end">@Model.Total.ToString("N2") ₺</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

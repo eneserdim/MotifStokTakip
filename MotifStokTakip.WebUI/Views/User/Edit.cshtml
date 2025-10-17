@@ -1,0 +1,44 @@
+﻿@model MotifStokTakip.WebUI.Controllers.UserFormVM
+@{
+    ViewData["Title"] = "Kullanıcıyı Düzenle";
+}
+<h4>Kullanıcıyı Düzenle</h4>
+<hr />
+<form asp-action="Edit" method="post" class="row g-3">
+    <input type="hidden" asp-for="Id" />
+    <div class="col-md-6">
+        <label class="form-label">Ad Soyad</label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Kullanıcı Adı</label>
+        <input asp-for="UserName" class="form-control" />
+        <span asp-validation-for="UserName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Yeni Şifre (opsiyonel)</label>
+        <input asp-for="Password" type="password" class="form-control" />
+        <span class="form-text">Boş bırakırsan şifre değişmez.</span>
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Rol</label>
+        <select asp-for="Role" class="form-select"
+                asp-items="Html.GetEnumSelectList<MotifStokTakip.Model.Enums.UserRole>()">
+        </select>
+    </div>
+    <div class="col-md-12">
+        <div class="form-check">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label class="form-check-label">Aktif</label>
+        </div>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary">Güncelle</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Liste</a>
+    </div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

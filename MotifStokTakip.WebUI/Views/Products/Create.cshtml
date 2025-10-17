@@ -1,0 +1,57 @@
+﻿@model MotifStokTakip.WebUI.Models.ProductCreateViewModel
+@{
+    ViewData["Title"] = "Yeni Ürün";
+}
+<h4>Yeni Ürün</h4>
+<hr />
+<form method="post" class="row g-3">
+    <div class="col-md-4">
+        <label class="form-label">Ad</label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">OEM No</label>
+        <input asp-for="OemNumber" class="form-control" />
+        <span asp-validation-for="OemNumber" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Barkod (opsiyonel)</label>
+        <input asp-for="Barcode" class="form-control" autocomplete="off" autofocus />
+        <small class="text-muted">Mevcut barkodu tarayıcıyla okutabilir ya da elle girebilirsin. Boş bırakılırsa otomatik üretilecek.</small>
+        <span asp-validation-for="Barcode" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Marka</label>
+        <input asp-for="BrandName" class="form-control" />
+        <span asp-validation-for="BrandName" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Marka Kodu</label>
+        <input asp-for="BrandCode" class="form-control" />
+        <span asp-validation-for="BrandCode" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Alış Fiyatı</label>
+        <input asp-for="PurchasePrice" class="form-control" />
+        <span asp-validation-for="PurchasePrice" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Raf No</label>
+        <input asp-for="ShelfNo" class="form-control" />
+        <span asp-validation-for="ShelfNo" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Stok Miktarı</label>
+        <input asp-for="StockQuantity" class="form-control" />
+        <span asp-validation-for="StockQuantity" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary">Kaydet</button>
+        <a class="btn btn-outline-secondary" href="@Url.Action("Index")">Listeye Dön</a>
+    </div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

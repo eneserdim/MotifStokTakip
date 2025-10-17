@@ -1,0 +1,105 @@
+﻿@model MotifStokTakip.WebUI.Models.ProductDetailViewModel
+@{
+    ViewData["Title"] = "Ürün Detayı";
+}
+
+<style>
+.detail-wrap { max-width: 1100px; margin: 18px auto; }
+.kit { display:grid; gap:18px; grid-template-columns: 1.2fr .8fr; }
+@@media (max-width: 992px){ .kit{ grid-template-columns: 1fr; } }
+.cardx{ background:#fff; border-radius:18px; box-shadow:0 10px 30px rgba(2,6,23,.08); padding:18px 20px; }
+.badge-soft{ background:#eef2ff; color:#3730a3; font-weight:600; border-radius:999px; padding:.35rem .7rem; }
+.label{ font-size:.8rem; color:#6b7280; }
+.value{ font-weight:600; }
+.stat{ background:#f8fafc; border-radius:14px; padding:12px 14px; }
+.actions a, .actions button{ margin-right:8px; margin-bottom:8px; }
+.barcode-holder{ text-align:center; padding:16px; background:#f9fafb; border-radius:14px; }
+.meta-grid{ display:grid; gap:12px; grid-template-columns: repeat(2,minmax(0,1fr)); }
+</style>
+
+<div class="detail-wrap">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+      <div>
+          <div class="label">Ürün</div>
+          <h3 class="m-0">@Model.Name</h3>
+          <div class="mt-1">
+              <span class="badge-soft me-1">OEM: @Model.OemNumber</span>
+              <span class="badge-soft me-1">Marka: @Model.BrandName</span>
+              <span class="badge-soft">Kod: @Model.BrandCode</span>
+          </div>
+      </div>
+      <div class="actions">
+          <a class="btn btn-outline-secondary" href="@Url.Action("Index")">Listeye Dön</a>
+          <a class="btn btn-primary" href="@Url.Action("Edit","Products", new { id = Model.Id })">Düzenle</a>
+          <a class="btn btn-outline-primary" href="@Url.Action("GenerateBarcode","Products", new { id = Model.Id })">Barkod Üret / Güncelle</a>
+          @if (!string.IsNullOrWhiteSpace(Model.Barcode))
+          {
+              <a class="btn btn-success" target="_blank" href="@Url.Action("BarcodePrintRaw","Products", new { id = Model.Id })">Yazdır</a>
+          }
+      </div>
+  </div>
+
+  <div class="kit">
+      <!-- SOL: Genel bilgiler -->
+      <div class="cardx">
+          <h5 class="mb-3">Genel Bilgiler</h5>
+          <div class="meta-grid">
+              <div><div class="label">Raf No</div><div class="value">@Model.ShelfNo</div></div>
+              <div><div class="label">Stok</div><div class="value">@Model.StockQuantity</div></div>
+              <div><div class="label">Alış Fiyatı</div><div class="value">@Model.PurchasePrice</div></div>
+              <div><div class="label">Oluşturulma</div><div class="value">@Model.CreatedAt.ToLocalTime()</div></div>
+              <div><div class="label">Güncellenme</div><div class="value">@Model.UpdatedAt?.ToLocalTime()</div></div>
+              <div>
+                  <div class="label">Barkod</div>
+                  <div class="d-flex align-items-center gap-2">
+                      <span class="value">@(!string.IsNullOrWhiteSpace(Model.Barcode) ? Model.Barcode : "—")</span>
+                      @if (!string.IsNullOrWhiteSpace(Model.Barcode))
+                      {
+                          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard.writeText('@Model.Barcode')">Kopyala</button>
+                      }
+                  </div>
+              </div>
+          </div>
+
+          <hr class="my-3"/>
+
+          <div class="row g-3">
+              <div class="col-md-6">
+                  <div class="stat">
+                      <div class="label">Bağımsız Satış Toplam (Adet)</div>
+                      <div class="value fs-5">@Model.TotalSoldQty</div>
+                  </div>
+              </div>
+              <div class="col-md-6">
+                  <div class="stat">
+                      <div class="label">Servislerde Kullanım (Adet)</div>
+                      <div class="value fs-5">@Model.TotalUsedInServicesQty</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <!-- SAĞ: Barkod kartı -->
+      <div class="cardx">
+          <h5 class="mb-3">Barkod</h5>
+          @if (string.IsNullOrWhiteSpace(Model.Barcode))
+          {
+              <div class="barcode-holder">
+                  <div class="mb-2">Bu ürün için barkod oluşturulmamış.</div>
+                  <a class="btn btn-outline-primary" href="@Url.Action("GenerateBarcode","Products", new { id = Model.Id })">Barkod Oluştur</a>
+              </div>
+          }
+          else
+          {
+              <div class="barcode-holder">
+                  <img src="@Model.BarcodeImgUrl" alt="barcode" style="max-width:420px;width:100%;height:auto;" />
+                  <div class="mt-2" style="letter-spacing:3px;font-weight:700;">@Model.Barcode</div>
+                  <div class="mt-3">
+                      <a class="btn btn-success" target="_blank" href="@Url.Action("BarcodePrintRaw","Products", new { id = Model.Id })">Yazdır</a>
+                      <a class="btn btn-outline-primary" href="@Url.Action("GenerateBarcode","Products", new { id = Model.Id })">Yeniden Oluştur</a>
+                  </div>
+              </div>
+          }
+      </div>
+  </div>
+</div>

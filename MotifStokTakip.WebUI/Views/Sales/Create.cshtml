@@ -1,0 +1,146 @@
+﻿@model MotifStokTakip.WebUI.Models.SaleCreateViewModel
+@{
+    ViewData["Title"] = "Ürün Satış";
+}
+
+<style>
+    .scan-zone {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        padding: 12px;
+        border-radius: 12px;
+    }
+</style>
+
+<h4>Ürün Satış</h4>
+<hr />
+
+<div class="scan-zone mb-3">
+    <label class="form-label">Barkod Oku / Gir</label>
+    <input type="text" id="scan" class="form-control" placeholder="Okutun veya yazıp Enter'a basın" autocomplete="off" />
+    <div id="scanHelp" class="form-text">Barkodu okutunca tabloya otomatik satır eklenir.</div>
+</div>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+
+    <div id="rows">
+        <div class="row g-2 align-items-end mb-2 item-row">
+            <div class="col-md-5">
+                <label class="form-label">Ürün Adı</label>
+                <input class="form-control" name="Items[0].ProductName" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Adet</label>
+                <input class="form-control" name="Items[0].Quantity" value="1" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Birim Fiyat</label>
+                <input class="form-control" name="Items[0].UnitPrice" value="0" />
+            </div>
+            <input type="hidden" name="Items[0].ProductId" />
+            <input type="hidden" name="Items[0].Barcode" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <button class="btn btn-outline-secondary" type="button" id="addRow">Satır Ekle</button>
+    </div>
+
+    <div class="mb-3">
+        <strong>Toplam: </strong><span id="grand">0</span>
+    </div>
+
+    <button class="btn btn-primary">Kaydet</button>
+    <a class="btn btn-outline-secondary" href="@Url.Action("Index","Products")">Ürünler</a>
+</form>
+
+<template id="row-template">
+    <div class="row g-2 align-items-end mb-2 item-row">
+        <div class="col-md-5">
+            <label class="form-label">Ürün Adı</label>
+            <input class="form-control" name="Items[__idx__].ProductName" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Adet</label>
+            <input class="form-control qty" name="Items[__idx__].Quantity" value="1" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Birim Fiyat</label>
+            <input class="form-control price" name="Items[__idx__].UnitPrice" value="0" />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button class="btn btn-outline-danger remove" type="button">Sil</button>
+        </div>
+        <input type="hidden" name="Items[__idx__].ProductId" />
+        <input type="hidden" name="Items[__idx__].Barcode" />
+    </div>
+</template>
+
+@section Scripts {
+    <script>
+        let idx = 1;
+        const rows = document.getElementById('rows');
+        const tpl = document.getElementById('row-template').innerHTML;
+
+        document.getElementById('addRow').addEventListener('click', () => {
+            const html = tpl.replaceAll('__idx__', idx);
+            rows.insertAdjacentHTML('beforeend', html);
+            idx++;
+            recalc();
+        });
+
+        rows.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove')) {
+                e.target.closest('.item-row').remove();
+                recalc();
+            }
+        });
+
+        rows.addEventListener('input', (e) => {
+            if (e.target.classList.contains('qty') || e.target.classList.contains('price')) {
+                recalc();
+            }
+        });
+
+        function recalc() {
+            let total = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const q = parseFloat(row.querySelector('[name$=".Quantity"]').value) || 0;
+                const p = parseFloat(row.querySelector('[name$=".UnitPrice"]').value) || 0;
+                total += q * p;
+            });
+            document.getElementById('grand').textContent = total.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+        }
+
+        // barkod input
+        const scan = document.getElementById('scan');
+        scan.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const code = scan.value.trim();
+                if (!code) return;
+                const r = await fetch('@Url.Action("FindProduct", "Sales")?barcode=' + encodeURIComponent(code));
+                const data = await r.json();
+                // yeni satır ekle
+                const html = tpl.replaceAll('__idx__', idx);
+                rows.insertAdjacentHTML('beforeend', html);
+                const row = rows.lastElementChild;
+                if (data) {
+                    row.querySelector('[name$=".ProductId"]').value = data.id;
+                    row.querySelector('[name$=".ProductName"]').value = data.name;
+                    row.querySelector('[name$=".UnitPrice"]').value = data.price;
+                    row.querySelector('[name$=".Barcode"]').value = code;
+                    row.querySelector('[name$=".Quantity"]').value = 1;
+                } else {
+                    row.querySelector('[name$=".ProductName"]').value = code; // serbest kalem
+                    row.querySelector('[name$=".Quantity"]').value = 1;
+                    row.querySelector('[name$=".UnitPrice"]').value = 0;
+                }
+                idx++;
+                scan.value = '';
+                recalc();
+            }
+        });
+    </script>
+}

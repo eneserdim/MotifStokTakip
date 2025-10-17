@@ -1,0 +1,194 @@
+﻿@model MotifStokTakip.Model.Entities.Customer
+@using MotifStokTakip.Model.Entities
+@{
+    ViewData["Title"] = "Müşteri Detay";
+
+    var vehicles = (IEnumerable<Vehicle>)(ViewBag.Vehicles ?? Enumerable.Empty<Vehicle>());
+    var orders = (IEnumerable<ServiceOrder>)(ViewBag.Orders ?? Enumerable.Empty<ServiceOrder>());
+
+    decimal totalInvoice = ViewBag.TotalInvoice is decimal d1 ? d1 : 0m;
+    decimal paymentsIn = ViewBag.PaymentsIn is decimal d2 ? d2 : 0m;
+    decimal paymentsOut = ViewBag.PaymentsOut is decimal d3 ? d3 : 0m;
+    decimal balance = ViewBag.Balance is decimal d4 ? d4 : 0m;
+
+    int openCount = ViewBag.OpenCount is int i1 ? i1 : 0;
+    DateTime? lastSrv = ViewBag.LastService as DateTime?;
+
+    // >>> Ödeme durumu haritası: ServiceOrderId -> "Ödeme Alındı" | "Kısmi Ödeme" | "Ödeme Alınmadı"
+    var payMap = ViewBag.OrderPaymentMap as IDictionary<int, string> ?? new Dictionary<int, string>();
+}
+<style>
+    .cardx {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(2,6,23,.08);
+        padding: 16px 18px
+    }
+
+    .stat {
+        font-size: .9rem;
+        color: #6b7280
+    }
+
+        .stat .v {
+            display: block;
+            font-weight: 600;
+            color: #111827
+        }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Müşteri Detay</h4>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-dark" asp-action="Ledger" asp-route-id="@Model.Id">Ekstre</a>
+        <a class="btn btn-outline-primary" asp-action="Payments" asp-route-id="@Model.Id">Tahsilatlar</a>
+        <a class="btn btn-primary" asp-action="CreatePayment" asp-route-id="@Model.Id">Tahsilat Ekle</a>
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Düzenle</a>
+        <a class="btn btn-outline-secondary" asp-action="Index">Liste</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- SOL -->
+    <div class="col-lg-5 d-flex flex-column gap-3">
+        <div class="cardx">
+            <h5 class="mb-2">@Model.FullName</h5>
+            @if (!string.IsNullOrWhiteSpace(Model.CompanyName))
+            {
+                <div class="text-muted">Firma: @Model.CompanyName</div>
+            }
+            <div class="text-muted">Telefon: @Model.Phone</div>
+            <div class="text-muted">Adres: @Model.Address</div>
+            <hr class="my-3" />
+            <div class="row g-3">
+                <div class="col-6 col-md-6 stat">
+                    Fatura Toplamı (Toplam Servis Tutarı)
+                    <span class="v">@totalInvoice.ToString("N2") ₺</span>
+                </div>
+                <div class="col-6 col-md-6 stat">
+                    Açık Servis
+                    <span class="v"><span class="badge bg-warning text-dark">@openCount</span></span>
+                </div>
+                <div class="col-6 col-md-6 stat">
+                    Tahsilat (Toplam Alınan Ödeme)
+                    <span class="v text-success">@paymentsIn.ToString("N2") ₺</span>
+                </div>
+                <div class="col-6 col-md-6 stat">
+                    İade/Ödeme (Müşteriye Yapılan İade)
+                    <span class="v text-danger">@paymentsOut.ToString("N2") ₺</span>
+                </div>
+                <div class="col-12 stat">
+                    Bakiye (Müşterinin Güncel Borcu)
+                    <span class="v">@balance.ToString("N2") ₺</span>
+                </div>
+                <div class="col-12 stat">
+                    Son Servis Tarihi
+                    <span class="v">@((lastSrv?.ToLocalTime().ToString("dd.MM.yyyy HH:mm")) ?? "-")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cardx">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Araçlar</h6>
+                <a class="btn btn-sm btn-outline-secondary" asp-controller="Vehicles" asp-action="Create" asp-route-customerId="@Model.Id">Yeni Araç</a>
+            </div>
+            @if (!vehicles.Any())
+            {
+                <div class="text-muted">Kayıtlı araç yok.</div>
+            }
+            else
+            {
+                <table class="table table-striped table-hover align-middle" class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Plaka</th><th>Marka/Model</th><th>Yıl</th></tr></thead>
+                    <tbody>
+                        @foreach (var v in vehicles)
+                        {
+                            <tr>
+                                <td>@v.Plate</td>
+                                <td>@v.Brand @v.Model</td>
+                                <td>@(v.Year?.ToString() ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <!-- SAĞ -->
+    <div class="col-lg-7">
+        <div class="cardx">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Servis Geçmişi</h6>
+                @{
+                    var page = ViewBag.Page is int p ? p : 1;
+                    var totalPages = ViewBag.TotalPages is int tp ? tp : 1;
+                }
+                @if (totalPages > 1)
+                {
+                    <nav class="mt-3">
+                        <ul class="pagination pagination-sm justify-content-end mb-0">
+                            <li class="page-item @(page<=1?"disabled":"")">
+                                <a class="page-link" asp-action="Details" asp-route-id="@Model.Id" asp-route-page="@(page-1)">«</a>
+                            </li>
+                            @for (var i = 1; i <= totalPages; i++)
+                            {
+                                <li class="page-item @(i==page?"active":"")">
+                                    <a class="page-link" asp-action="Details" asp-route-id="@Model.Id" asp-route-page="@i">@i</a>
+                                </li>
+                            }
+                            <li class="page-item @(page>=totalPages?"disabled":"")">
+                                <a class="page-link" asp-action="Details" asp-route-id="@Model.Id" asp-route-page="@(page+1)">»</a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+
+            </div>
+
+            @if (!orders.Any())
+            {
+                <div class="text-muted">Servis kaydı yok.</div>
+            }
+            else
+            {
+                <div class="list-group">
+                    @foreach (var o in orders)
+                    {
+                        var s = o.Status.ToString();
+                        var closed =
+                        s.Contains("Teslim", StringComparison.OrdinalIgnoreCase) ||
+                        s.Contains("Tamam", StringComparison.OrdinalIgnoreCase) ||
+                        s.Contains("Closed", StringComparison.OrdinalIgnoreCase) ||
+                        s.Contains("Complete", StringComparison.OrdinalIgnoreCase) ||
+                        s.Contains("Kap", StringComparison.OrdinalIgnoreCase);
+                        var badgeClass = closed ? "success" : "warning text-dark";
+
+                        // ödeme etiketi
+                        payMap.TryGetValue(o.Id, out var payText);
+                        var payBadgeClass =
+                        payText == "Ödeme Alındı" ? "success" :
+                        payText == "Kısmi Ödeme" ? "info text-dark" :
+                        "warning text-dark"; // Ödeme Alınmadı
+
+                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                           asp-controller="ServiceOrders" asp-action="Details" asp-route-id="@o.Id">
+                            <div>
+                                <div class="fw-semibold">#@o.Id • @o.Vehicle?.Plate - @o.Vehicle?.Brand @o.Vehicle?.Model</div>
+                                <div class="small text-muted">@o.CreatedAt.ToLocalTime()</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-@badgeClass">@s</span>
+                                @if (!string.IsNullOrEmpty(payText))
+                                {
+                                    <span class="badge bg-@payBadgeClass">@payText</span>
+                                }
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

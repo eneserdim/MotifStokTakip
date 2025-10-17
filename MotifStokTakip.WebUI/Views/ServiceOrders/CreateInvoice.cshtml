@@ -1,0 +1,226 @@
+﻿@model MotifStokTakip.WebUI.Models.ServiceInvoiceCreateViewModel
+@{
+    ViewData["Title"] = "Servis Faturası";
+}
+
+<style>
+    .wrap {
+        max-width: 1100px;
+        margin: auto;
+    }
+
+    .cardx {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(2,6,23,.08);
+        padding: 16px 18px;
+    }
+
+    .scan-zone {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .tbl-head {
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .rowx {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr .6fr .6fr .6fr .3fr;
+        gap: 12px;
+        align-items: end;
+    }
+
+        .rowx .del {
+            align-self: center;
+        }
+
+    @@media (max-width: 992px) {
+        .rowx {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .summary {
+        background: #0ea5e9;
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 14px;
+    }
+
+        .summary b {
+            font-size: 1.1rem;
+        }
+</style>
+
+<div class="wrap">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Servis Faturası (#@Model.ServiceOrderId)</h4>
+        <a class="btn btn-outline-secondary" href="@Url.Action("Details","ServiceOrders", new { id = Model.ServiceOrderId })">Geri</a>
+    </div>
+
+    <div class="cardx mb-3">
+        <div class="scan-zone">
+            <label class="form-label">Barkod Oku / Gir</label>
+            <input type="text" id="scan" class="form-control" placeholder="Barkodu okutun veya yazıp Enter'a basın" autocomplete="off" />
+            <div class="form-text">Barkodu okutunca <b>Kalem Adı</b> ve <b>Alış</b> otomatik dolar. <b>Satış</b> fiyatını siz yazacaksınız.</div>
+        </div>
+    </div>
+
+    <form method="post" class="cardx">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="ServiceOrderId" />
+
+        <div class="tbl-head rowx mb-2">
+            <div>Kalem / Ürün</div>
+            <div>Barkod</div>
+            <div>Adet</div>
+            <div>Alış</div>
+            <div>Satış</div>
+            <div></div>
+        </div>
+
+        <div id="rows">
+            @for (int i = 0; i < Model.Items.Count; i++)
+            {
+                <div class="rowx item-row mb-2">
+                    <input type="hidden" name="Items.index" value="@i" />
+                    <div>
+                        <label class="form-label d-lg-none">Kalem / Ürün</label>
+                        <input class="form-control name" asp-for="Items[@i].ItemName" placeholder="Ürün adı / servis kalemi" />
+                    </div>
+                    <div>
+                        <label class="form-label d-lg-none">Barkod</label>
+                        <input class="form-control bc" name="Items[@i].Barcode" placeholder="barkod" />
+                        <input type="hidden" class="pid" asp-for="Items[@i].ProductId" />
+                    </div>
+                    <div>
+                        <label class="form-label d-lg-none">Adet</label>
+                        <input class="form-control qty" name="Items[__idx__].Quantity" value="1" />
+                    </div>
+                    <div>
+                        <label class="form-label d-lg-none">Alış</label>
+                        <input class="form-control cost" asp-for="Items[@i].CostPrice" value="0" />
+                    </div>
+                    <div>
+                        <label class="form-label d-lg-none">Satış</label>
+                        <input class="form-control price" asp-for="Items[@i].SalePrice" value="0" />
+                    </div>
+                    <div class="del">
+                        <button class="btn btn-outline-danger remove" type="button">Sil</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <button class="btn btn-outline-secondary" type="button" id="addRow">Satır Ekle</button>
+            </div>
+            <div class="summary">
+                <div>ARA TOPLAM</div>
+                <div><b><span id="grand">0</span> ₺</b></div>
+            </div>
+        </div>
+
+        <hr />
+        <button class="btn btn-primary">Kaydet</button>
+    </form>
+</div>
+
+<template id="row-template">
+    <div class="rowx item-row mb-2">
+        <input type="hidden" name="Items.index" value="__idx__" />  <!-- EKLENDİ -->
+        <div><input class="form-control name" name="Items[__idx__].ItemName" placeholder="Ürün adı / servis kalemi" /></div>
+        <div>
+            <input class="form-control bc" name="Items[__idx__].Barcode" placeholder="barkod" />
+            <input type="hidden" class="pid" name="Items[__idx__].ProductId" />
+        </div>
+        <div><input class="form-control qty" name="Items[__idx__].Quantity" value="1" /></div>
+        <div><input class="form-control cost" name="Items[__idx__].CostPrice" value="0" /></div>
+        <div><input class="form-control price" name="Items[__idx__].SalePrice" value="0" /></div>
+        <div class="del"><button class="btn btn-outline-danger remove" type="button">Sil</button></div>
+    </div>
+</template>
+
+
+@section Scripts {
+    <script>
+        let idx = @Model.Items.Count;
+        const rows = document.getElementById('rows');
+        const tpl = document.getElementById('row-template').innerHTML;
+        const grand = document.getElementById('grand');
+
+        function recalc() {
+            let total = 0;
+            document.querySelectorAll('.item-row').forEach(r => {
+                const q = parseFloat(r.querySelector('.qty').value) || 0;
+                const p = parseFloat(r.querySelector('.price').value) || 0;
+                total += q * p;
+            });
+            grand.textContent = total.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+        }
+
+        document.getElementById('addRow').addEventListener('click', () => {
+            rows.insertAdjacentHTML('beforeend', tpl.replaceAll('__idx__', idx++));
+        });
+
+        rows.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove')) {
+                e.preventDefault();
+                e.target.closest('.item-row').remove();
+                recalc();
+            }
+        });
+
+        rows.addEventListener('input', (e) => {
+            if (e.target.classList.contains('qty') || e.target.classList.contains('price')) {
+                recalc();
+            }
+        });
+
+        // Satır içindeki barkod alanında Enter
+        rows.addEventListener('keydown', async (e) => {
+            if (e.target.classList.contains('bc') && e.key === 'Enter') {
+                e.preventDefault();
+                await fillRowFromBarcode(e.target.closest('.item-row'), e.target.value);
+            }
+        });
+
+        // Üst barkod alanı: yeni satır ekleyip doldur
+        document.getElementById('scan').addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const code = e.target.value.trim();
+                if (!code) return;
+                rows.insertAdjacentHTML('beforeend', tpl.replaceAll('__idx__', idx++));
+                const row = rows.lastElementChild;
+                await fillRowFromBarcode(row, code);
+                e.target.value = '';
+            }
+        });
+
+        async function fillRowFromBarcode(row, code) {
+            const r = await fetch('@Url.Action("FindProductByBarcode", "ServiceOrders")?barcode=' + encodeURIComponent(code));
+            const data = await r.json();
+            if (data) {
+                row.querySelector('.pid').value = data.id;
+                row.querySelector('.name').value = data.name;
+                row.querySelector('.cost').value = (data.price ?? 0).toString().replace('.', ',');
+                row.querySelector('.qty').value = 1;
+                row.querySelector('.bc').value = code;
+            } else {
+                // ürün bulunamazsa serbest satır
+                row.querySelector('.name').value = code;
+                row.querySelector('.qty').value = 1;
+                row.querySelector('.cost').value = 0;
+                row.querySelector('.bc').value = code;
+            }
+            recalc();
+        }
+    </script>
+}

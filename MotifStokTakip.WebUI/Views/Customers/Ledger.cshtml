@@ -1,0 +1,163 @@
+﻿@model IEnumerable<(MotifStokTakip.WebUI.Models.CustomerLedgerRow row, decimal balance)>
+
+@{
+    var customer = (MotifStokTakip.Model.Entities.Customer)ViewBag.Customer;
+    decimal invoiceTotal = (decimal)ViewBag.InvoiceTotal;
+    decimal inSum = (decimal)ViewBag.InSum;
+    decimal outSum = (decimal)ViewBag.OutSum;
+    decimal balanceAll = (decimal)ViewBag.Balance;
+    var from = (string?)ViewBag.From;
+    var to = (string?)ViewBag.To;
+    ViewData["Title"] = "Cari Ekstre";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Cari Ekstre • @customer.FullName</h4>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@customer.Id">Müşteri Detayı</a>
+    </div>
+</div>
+
+<form method="get" class="card p-3 mb-3">
+    <input type="hidden" name="id" value="@customer.Id" />
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Başlangıç</label>
+            <input type="date" class="form-control" name="from" value="@from" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Bitiş</label>
+            <input type="date" class="form-control" name="to" value="@to" />
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary">Filtrele</button>
+            <a class="btn btn-outline-secondary" asp-action="Ledger" asp-route-id="@customer.Id">Temizle</a>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="card p-3"><div>Fatura Toplamı (Toplam Servis Tutarı)</div><div class="fw-bold">@invoiceTotal.ToString("N2") ₺</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div>Tahsilat (Toplam Alınan Ödeme)</div><div class="fw-bold text-success">@inSum.ToString("N2") ₺</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div>İade/Ödeme (Müşteriye Yapılan İade)</div><div class="fw-bold text-danger">@outSum.ToString("N2") ₺</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div>Bakiye (Müşterinin Güncel Borcu)</div><div class="fw-bold">@balanceAll.ToString("N2") ₺</div></div></div>
+</div>
+
+<table class="table table-striped table-hover align-middle" class="table table-hover align-middle">
+    <thead>
+        <tr>
+            <th>Tarih</th>
+            <th>Tür</th>
+            <th>Ref</th>
+            <th>Açıklama</th>
+            <th class="text-end">Borç</th>
+            <th class="text-end">Alacak</th>
+            <th class="text-end">Bakiye</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            var r = t.row;
+
+            // Servis faturasında ek ödeme rozetini çöz
+            var isServis = r.Type != null && r.Type.StartsWith("Servis Faturası");
+            var paid = isServis && r.Type.Contains("Ödeme Yapıldı");
+            var payBadgeClass = paid ? "success" : "warning text-dark";
+            var payBadgeText = paid ? "Ödeme Yapıldı" : "Ödeme Bekleniyor";
+
+            <tr>
+                <td>@r.Date.ToLocalTime()</td>
+                <td>
+                    @if (isServis)
+                    {
+                        <span class="badge bg-secondary">Servis Faturası</span>
+                        <span class="badge bg-@payBadgeClass">@payBadgeText</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-@(
+                            r.Type=="Tahsilat" ? "success" :
+                            r.Type=="İade/Ödeme" ? "danger" : "secondary")">@r.Type</span>
+                    }
+                </td>
+                <td>
+                    @* Servis faturası satırlarında hem servis hem fatura linki göstereceğiz *@
+                    @if (r.ServiceOrderId.HasValue)
+                    {
+                        <a asp-controller="ServiceOrders"
+                           asp-action="Details"
+                           asp-route-id="@r.ServiceOrderId">SO#@r.ServiceOrderId</a>
+                    }
+                    else if (r.SaleId.HasValue)
+                    {
+                        <a asp-controller="Sales" asp-action="Details" asp-route-id="@r.SaleId">@r.RefNo</a>
+                    }
+                    else if (r.PaymentId.HasValue)
+                    {
+                        <a asp-controller="Customers" asp-action="Payments" asp-route-id="@ViewBag.Customer.Id">@r.RefNo</a>
+                    }
+                    else
+                    {
+                        @r.RefNo
+                    }
+                </td>
+
+                <td>
+                    @r.Description
+                    @if (!string.IsNullOrWhiteSpace(r.Method))
+                    {
+                        <span class="text-muted"> • @r.Method</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(r.Note))
+                    {
+                        <span class="text-muted"> • @r.Note</span>
+                    }
+                </td>
+                <td class="text-end">@((r.Debit == 0 ? "" : r.Debit.ToString("N2") + " ₺"))</td>
+                <td class="text-end">@((r.Credit == 0 ? "" : r.Credit.ToString("N2") + " ₺"))</td>
+                <td class="text-end fw-semibold">@t.balance.ToString("N2") ₺</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@{
+    var page = ViewBag.Page is int p ? p : 1;
+    var totalPages = ViewBag.TotalPages is int tp ? tp : 1;
+}
+@if (totalPages > 1)
+{
+    <nav class="mt-2">
+        <ul class="pagination pagination-sm justify-content-end">
+            <li class="page-item @(page<=1?"disabled":"")">
+                <a class="page-link"
+                   asp-action="Ledger"
+                   asp-route-id="@(ViewBag.Customer.Id)"
+                   asp-route-from="@ViewBag.From"
+                   asp-route-to="@ViewBag.To"
+                   asp-route-page="@(page-1)">«</a>
+            </li>
+            @for (var i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i==page?"active":"")">
+                    <a class="page-link"
+                       asp-action="Ledger"
+                       asp-route-id="@(ViewBag.Customer.Id)"
+                       asp-route-from="@ViewBag.From"
+                       asp-route-to="@ViewBag.To"
+                       asp-route-page="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(page>=totalPages?"disabled":"")">
+                <a class="page-link"
+                   asp-action="Ledger"
+                   asp-route-id="@(ViewBag.Customer.Id)"
+                   asp-route-from="@ViewBag.From"
+                   asp-route-to="@ViewBag.To"
+                   asp-route-page="@(page+1)">»</a>
+            </li>
+        </ul>
+    </nav>
+}
+

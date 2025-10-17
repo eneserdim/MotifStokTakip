@@ -1,0 +1,98 @@
+﻿@model MotifStokTakip.WebUI.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Giriş Yap";
+    Layout = "_AuthLayout";
+}
+
+<div class="row g-0">
+    <!-- SOL: Tanıtım paneli -->
+    <div class="col-lg-6 left-pane">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="brand-chip">
+                <i class="bi bi-shield-lock"></i>
+                <span>Motif Otomotiv</span>
+            </span>
+            <span class="badge-soft">Stok Takip • Ürün Satış • Oto Servis</span>
+        </div>
+
+        <div class="px-1">
+            <h2 class="fw-bold mb-2">Giriş Paneli</h2>
+            <p class="small-muted mb-4">
+                Stok ve servis süreçlerinizi tek yerden yönetin. Güvenli giriş, gerçek-zamanlı bildirim
+                ve modern arayüz ile üretkenliğinizi artırın.
+            </p>
+
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge-soft"><i class="bi bi-lock me-1"></i> Güvenli Giriş</span>
+                <span class="badge-soft"><i class="bi bi-bell me-1"></i> Anlık Bildirim</span>
+                <span class="badge-soft"><i class="bi bi-headset me-1"></i> 7/24 Destek</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAĞ: Form paneli -->
+    <div class="col-lg-6 right-pane">
+        <div class="px-1">
+            <h5 class="fw-semibold mb-3">Giriş Yap</h5>
+
+            <form method="post" class="needs-validation" novalidate>
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <div class="mb-3">
+                    <label class="form-label small">E-posta veya Kullanıcı Adı</label>
+                    <input asp-for="UserName" class="form-control input-dark" placeholder="ornek@firma.com" />
+                    <span asp-validation-for="UserName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small">Şifre</label>
+                    <div class="input-group">
+                        <input asp-for="Password" type="password" class="form-control input-dark" placeholder="••••••••" id="pwd-input" />
+                        <button class="btn btn-outline-light border-0" type="button" id="togglePwd" aria-label="Şifreyi göster">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberCheck">
+                        <label class="form-check-label small-muted" for="rememberCheck">Beni hatırla</label>
+                    </div>
+                </div>
+
+                <button class="btn btn-brand w-100 py-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Giriş Yap
+                </button>
+            </form>
+
+            <p class="small-muted mt-4 mb-0">
+                Tüm Hakları Saklıdır © @DateTime.Now.Year&nbsp;|&nbsp;
+                Design by <a href="https://codeilla.com.tr/" target="_blank" rel="noopener">Codeilla Software</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Şifre göster/gizle
+        (function () {
+            const btn = document.getElementById('togglePwd');
+            const inp = document.getElementById('pwd-input');
+            const icon = btn.querySelector('i');
+
+            btn.addEventListener('click', function () {
+                const isPwd = inp.getAttribute('type') === 'password';
+                inp.setAttribute('type', isPwd ? 'text' : 'password');
+                icon.classList.toggle('bi-eye');
+                icon.classList.toggle('bi-eye-slash');
+            });
+        })();
+    </script>
+}

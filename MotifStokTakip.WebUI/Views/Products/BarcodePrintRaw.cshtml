@@ -1,0 +1,21 @@
+﻿@model MotifStokTakip.Model.Entities.Product
+@{
+    Layout = null;
+    var img = Url.Content($"~/barcodes/{Model.Id}.png?v={DateTime.UtcNow.Ticks}");
+}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body { margin:0; padding:0; }
+  /* A4: otomatik; etiket yazıcı için örn: size: 80mm 40mm; margin: 3mm; */
+  @@page { size: auto; margin: 8mm; }
+  img { display:block; width:100%; height:auto; }
+</style>
+</head>
+<body>
+  <img src="@img" alt="barcode" />
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>

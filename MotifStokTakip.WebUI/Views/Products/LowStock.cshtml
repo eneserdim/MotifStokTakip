@@ -1,0 +1,32 @@
+﻿@model IEnumerable<MotifStokTakip.Model.Entities.Product>
+@{
+    ViewData["Title"] = "Düşük Stok";
+    var threshold = (int)(ViewBag.Threshold ?? 10);
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Düşük Stok ( < @threshold )</h4>
+    <form class="d-flex gap-2" method="get">
+        <input type="number" class="form-control" name="threshold" value="@threshold" min="0" style="width:140px" />
+        <button class="btn btn-outline-secondary">Uygula</button>
+    </form>
+</div>
+
+<table class="table table-striped table-hover align-middle" class="table table-hover align-middle">
+    <thead><tr><th>#</th><th>Ad</th><th>Barkod</th><th>Stok</th><th>Alış</th></tr></thead>
+    <tbody>
+        @{
+            var i = 1;
+            foreach (var p in Model)
+            {
+                <tr>
+                    <td>@i</td>
+                    <td>@p.Name</td>
+                    <td>@p.Barcode</td>
+                    <td><span class="badge bg-danger">@p.StockQuantity</span></td>
+                    <td>@p.PurchasePrice.ToString("N2")</td>
+                </tr>
+                i++;
+            }
+        }
+    </tbody>
+</table>

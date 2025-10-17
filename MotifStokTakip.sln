@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34316.72
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotifStokTakip.Core", "MotifStokTakip.Core\MotifStokTakip.Core.csproj", "{61EC746E-BE1E-4F94-A74D-E0250BF89DAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotifStokTakip.Model", "MotifStokTakip.Model\MotifStokTakip.Model.csproj", "{4969EA32-0936-47CB-92B5-78F1B00558CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotifStokTakip.Service", "MotifStokTakip.Service\MotifStokTakip.Service.csproj", "{532799DF-125E-40F8-979D-1DAD7BB6C734}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotifStokTakip.WebUI", "MotifStokTakip.WebUI\MotifStokTakip.WebUI.csproj", "{0BFBB817-09D9-4090-AACB-A39B727DE0AA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{61EC746E-BE1E-4F94-A74D-E0250BF89DAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61EC746E-BE1E-4F94-A74D-E0250BF89DAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61EC746E-BE1E-4F94-A74D-E0250BF89DAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61EC746E-BE1E-4F94-A74D-E0250BF89DAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4969EA32-0936-47CB-92B5-78F1B00558CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4969EA32-0936-47CB-92B5-78F1B00558CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4969EA32-0936-47CB-92B5-78F1B00558CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4969EA32-0936-47CB-92B5-78F1B00558CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{532799DF-125E-40F8-979D-1DAD7BB6C734}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{532799DF-125E-40F8-979D-1DAD7BB6C734}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{532799DF-125E-40F8-979D-1DAD7BB6C734}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{532799DF-125E-40F8-979D-1DAD7BB6C734}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BFBB817-09D9-4090-AACB-A39B727DE0AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BFBB817-09D9-4090-AACB-A39B727DE0AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BFBB817-09D9-4090-AACB-A39B727DE0AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BFBB817-09D9-4090-AACB-A39B727DE0AA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {59264DD6-5C3A-4AB2-BA5D-22C30A733F11}
+	EndGlobalSection
+EndGlobal

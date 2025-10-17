@@ -1,0 +1,50 @@
+﻿@model IEnumerable<MotifStokTakip.WebUI.Models.CustomerPaymentListItem>
+@using MotifStokTakip.Model.Enums
+@{
+    var c = (MotifStokTakip.Model.Entities.Customer)ViewBag.Customer;
+    decimal invoiceTotal = (decimal)ViewBag.InvoiceTotal, inSum = (decimal)ViewBag.InSum,
+            outSum = (decimal)ViewBag.OutSum, balance = (decimal)ViewBag.Balance;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Tahsilatlar • @c.FullName</h4>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@c.Id">Müşteri Detayı</a>
+        <a class="btn btn-primary" asp-action="CreatePayment" asp-route-id="@c.Id">Yeni Tahsilat</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="card p-3"><div>Fatura Toplamı</div><div class="fw-bold">@invoiceTotal.ToString("N2") ₺</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div>Tahsilat</div><div class="fw-bold text-success">@inSum.ToString("N2") ₺</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div>İade/Ödeme</div><div class="fw-bold text-danger">@outSum.ToString("N2") ₺</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div>Bakiye</div><div class="fw-bold">@balance.ToString("N2") ₺</div></div></div>
+</div>
+
+<table class="table table-striped table-hover align-middle" class="table table-hover">
+    <thead><tr><th>Tarih</th><th>Yön</th><th>Tutar</th><th>Yöntem</th><th>Açıklama</th><th class="text-end">İşlem</th></tr></thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.PaidAt.ToLocalTime()</td>
+                <td>
+                    <span class="badge bg-@(p.Direction==PaymentDirection.In?"success":"danger")">
+                        @(p.Direction == PaymentDirection.In ? "Tahsilat" : "İade/Ödeme")
+                    </span>
+                </td>
+                <td>@(p.Direction == PaymentDirection.In ? "+" : "-") @p.Amount.ToString("N2") ₺</td>
+                <td>@p.Method</td>
+                <td>@p.Note</td>
+                <td class="text-end">
+                    <form asp-action="DeletePayment" method="post" onsubmit="return confirm('Silinsin mi?')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <input type="hidden" name="customerId" value="@c.Id" />
+                        <button class="btn btn-sm btn-outline-danger">Sil</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

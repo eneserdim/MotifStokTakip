@@ -1,0 +1,121 @@
+﻿@model ServiceOrderCreateViewModel
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+    <input type="hidden" asp-for="VehicleId" id="VehicleId" />
+    <input type="hidden" asp-for="CustomerId" id="CustomerId" />
+
+    <div class="card p-3 mb-3">
+        <h5>Hızlı Seçim</h5>
+        <div class="row g-3">
+            <div class="col-md-6 position-relative">
+                <label class="form-label">Araç (Plaka / Şasi No)</label>
+                <input class="form-control" asp-for="VehicleText" id="vehicleText" autocomplete="off" />
+                <div id="vehicleSuggest" class="list-group position-absolute w-100 d-none"
+                     style="z-index: 1055; max-height: 240px; overflow:auto"></div>
+                <small class="form-text text-muted">İpucu: Önce araç seçerseniz, bağlı cari otomatik dolar.</small>
+            </div>
+
+            <div class="col-md-6 position-relative">
+                <label class="form-label">Cari (Ad/Telefon/Firma)</label>
+                <input class="form-control" asp-for="CustomerText" id="customerText" autocomplete="off" />
+                <div id="customerSuggest" class="list-group position-absolute w-100 d-none"
+                     style="z-index: 1055; max-height: 240px; overflow:auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Başlık</label>
+        <input class="form-control" asp-for="Title" />
+        <span class="text-danger" asp-validation-for="Title"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Açıklama / Şikayet</label>
+        <textarea class="form-control" asp-for="Description" rows="6"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+    <a asp-action="Index" class="btn btn-outline-secondary ms-2">Geri</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const vInput = document.getElementById('vehicleText');
+        const vList = document.getElementById('vehicleSuggest');
+        const cInput = document.getElementById('customerText');
+        const cList = document.getElementById('customerSuggest');
+
+        const hidV = document.getElementById('VehicleId');
+        const hidC = document.getElementById('CustomerId');
+
+        const debounce = (fn, d = 200) => {
+            let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), d); };
+        };
+        function hide(el) { el.classList.add('d-none'); el.innerHTML = ''; }
+        function showList(container, items, onPick) {
+            container.innerHTML = '';
+            if (!items || !items.length) { hide(container); return; }
+            items.forEach(x => {
+                const a = document.createElement('a');
+                a.href = '#'; a.className = 'list-group-item list-group-item-action';
+                a.textContent = x.display;
+                a.addEventListener('mousedown', e => { e.preventDefault(); onPick(x); });
+                container.appendChild(a);
+            });
+            container.classList.remove('d-none');
+        }
+
+        const searchVehicles = debounce(async (term) => {
+            if (!term || term.length < 2) { hide(vList); return; }
+            const r = await fetch('/Vehicles/Search?q=' + encodeURIComponent(term));
+            const data = r.ok ? await r.json() : [];
+            showList(vList, data, (item) => {
+                vInput.value = item.display;
+                hidV.value = item.id;
+                // araçtan cari doldur
+                if (item.customerId) {
+                    hidC.value = item.customerId;
+                    cInput.value = item.customerDisplay || '';
+                }
+                hide(vList);
+            });
+        }, 200);
+
+        const searchCustomers = debounce(async (term) => {
+            if (!term || term.length < 2) { hide(cList); return; }
+            const r = await fetch('/Customers/Search?q=' + encodeURIComponent(term));
+            const data = r.ok ? await r.json() : [];
+            showList(cList, data, (item) => {
+                cInput.value = item.display;
+                hidC.value = item.id;
+                hide(cList);
+            });
+        }, 200);
+
+        vInput.addEventListener('input', () => { hidV.value = 0; searchVehicles(vInput.value); });
+        cInput.addEventListener('input', () => { hidC.value = 0; searchCustomers(cInput.value); });
+
+        // focus dışına çıkınca listeyi kapatalım
+        vInput.addEventListener('blur', () => setTimeout(() => hide(vList), 150));
+        cInput.addEventListener('blur', () => setTimeout(() => hide(cList), 150));
+
+        // Enter ile ilk öneriyi seç (opsiyonel)
+        vInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const first = vList.querySelector('.list-group-item');
+                if (first) { e.preventDefault(); first.dispatchEvent(new MouseEvent('mousedown')); }
+            }
+        });
+        cInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const first = cList.querySelector('.list-group-item');
+                if (first) { e.preventDefault(); first.dispatchEvent(new MouseEvent('mousedown')); }
+            }
+        });
+    </script>
+}

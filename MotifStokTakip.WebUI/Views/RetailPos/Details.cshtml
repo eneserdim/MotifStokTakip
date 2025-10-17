@@ -1,0 +1,77 @@
+﻿@model MotifStokTakip.WebUI.Controllers.RetailSaleDetailsVM
+
+@{
+    var sale = Model.Sale;
+    var lines = Model.Lines ?? new List<MotifStokTakip.Model.Entities.RetailSaleLine>();
+    var subtotal = lines.Sum(l => l.SellPrice * l.Quantity);
+    ViewData["Title"] = $"Satış #{sale.Id}";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">@ViewData["Title"]</h3>
+
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Index">Liste</a>
+        <a class="btn btn-outline-dark"
+           asp-action="Print"
+           asp-route-id="@Model.Sale.Id"
+           target="_blank" rel="noopener">Yazdır</a>
+    </div>
+</div>
+
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div><strong>Tarih:</strong> @sale.CreatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+                <div>
+                    <strong>Müşteri:</strong>
+                    @if (sale.CustomerId.HasValue && sale.Customer != null)
+                    {
+                        @sale.Customer.FullName
+                    }
+                    else
+                    {
+                        @sale.WalkInCustomerName
+                    }
+                </div>
+                <div><strong>Satır Sayısı:</strong> @lines.Count</div>
+                <div>
+                    <strong>Ödeme:</strong>
+                    @(sale.Payments != null && sale.Payments.Any()
+                        ? sale.Payments.First().Method
+                        : "—")
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <table class="table table-striped table-hover align-middle" class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th class="text-center">Adet</th>
+                            <th class="text-end">Fiyat</th>
+                            <th class="text-end">Tutar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var l in lines)
+                        {
+                            <tr>
+                                <td>@l.ItemName</td>
+                                <td class="text-center">@l.Quantity</td>
+                                <td class="text-end">@l.SellPrice.ToString("N2") ₺</td>
+                                <td class="text-end">@((l.SellPrice * l.Quantity).ToString("N2")) ₺</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="text-end fs-5"><strong>Ara Toplam:</strong> @subtotal.ToString("N2") ₺</div>
+            </div>
+        </div>
+    </div>
+</div>

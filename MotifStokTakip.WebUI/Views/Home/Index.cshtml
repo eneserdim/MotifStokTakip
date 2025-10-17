@@ -1,0 +1,195 @@
+﻿@model MotifStokTakip.WebUI.Controllers.HomeController.DashboardVM
+@using System.Globalization
+@{
+    ViewData["Title"] = "Dashboard";
+    string money(decimal v) => v.ToString("N2") + " ₺";
+    var currentYear = DateTime.Now.Year;
+    var currentMonth = DateTime.Now.Month;
+    var tr = new CultureInfo("tr-TR");
+    var nowMonth = DateTime.Now.Month;
+}
+
+<div class="container-fluid g-3">
+    <!-- Filtre -->
+    <div class="card mb-3">
+        <div class="card-body d-flex flex-wrap align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0 me-1">Yıl</label>
+                <select id="ySelect" class="form-select">
+                    @for (var y = DateTime.Now.Year; y >= DateTime.Now.Year - 6; y--)
+                    {
+                        <option value="@y" selected="@(y==DateTime.Now.Year)">@y</option>
+                    }
+                </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0 me-1">Ay</label>
+                <select id="mSelect" class="form-select">
+                    @for (var m = 1; m <= 12; m++)
+                    {
+                        var name = tr.DateTimeFormat.GetMonthName(m);   // Ocak, Şubat, ...
+                        <option value="@m" selected="@(m == nowMonth)">@name</option>
+                    }
+                </select>
+            </div>
+            <button id="btnApply" type="button" class="btn btn-primary">
+                <i class="bi bi-funnel me-1"></i> Uygula
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Üst kartlar -->
+    <div class="row g-3">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted">Bu Ay Ürün Satış Tutarı</div>
+                    <div class="fs-3 fw-bold" id="prodTotal">@money(Model.ThisMonthProductTotal)</div>
+                    <div class="small text-secondary">Adet: <span id="prodCount">@Model.ThisMonthProductCount</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted">Toplam Servis</div>
+                    <div class="fs-3 fw-bold" id="svcAll">@Model.ServiceTotal</div>
+                    <div class="small text-secondary">
+                        Tamamlanan: <span id="svcCompleted">@Model.ServiceCompleted</span> •
+                        Açık: <span id="svcOpen">@Model.ServiceOpen</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted">Bu Ay Servis Faturaları</div>
+                    <div class="fs-6">Toplam: <b id="svcTotal">@money(Model.ThisMonthServiceTotal)</b></div>
+                    <div class="small text-success">Ödenen: <span id="svcPaid">@money(Model.ThisMonthServicePaid)</span></div>
+                    <div class="small text-danger">Bekleyen: <span id="svcUnpaid">@money(Model.ThisMonthServiceUnpaid)</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted">En Çok Alış (Stoktan)</div>
+                    <div class="fw-semibold" id="topRetail">@Model.TopRetailCustomerName</div>
+                    <div class="text-muted mt-2">Servise En Çok Gelen</div>
+                    <div class="fw-semibold" id="topService">@Model.TopServiceCustomerName</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafikler -->
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header fw-semibold">Yıllara Göre Ürün Satış Tutarı</div>
+                <div class="card-body"><canvas id="chartProducts"></canvas></div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header fw-semibold">Yıllara Göre Servis (Ödenen / Bekleyen)</div>
+                <div class="card-body"><canvas id="chartService"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+    <script>
+        // sayı format yardımcıları
+        const fmt = v => (v ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const money = v => `${fmt(v)} ₺`;
+
+        // Başlangıçta Model'den gelen verilerle grafikleri kuruyorsan
+        // (server tarafında @Model üzerinden varsayılan dizileri yazıyorsundur)
+        // Aşağıdaki başlangıç dizilerini kendi Model'inden dolduruyorsun:
+        const initProductYears = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProductSalesByYear?.Select(x => x.Year) ?? new int[0]));
+        const initProductVals = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProductSalesByYear?.Select(x => x.Value) ?? new decimal[0]));
+        const initSvcYears = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiceByYear?.Select(x => x.Year) ?? new int[0]));
+        const initSvcPaid = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiceByYear?.Select(x => x.Paid) ?? new decimal[0]));
+        const initSvcUnpaid = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiceByYear?.Select(x => x.Unpaid) ?? new decimal[0]));
+
+        // CHARTS
+        const pctx = document.getElementById('chartProducts');
+        const sctx = document.getElementById('chartService');
+
+        const chartProducts = new Chart(pctx, {
+            type: 'bar',
+            data: {
+                labels: initProductYears,
+                datasets: [{
+                    label: 'Ürün Satış (₺)',
+                    data: initProductVals
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const chartService = new Chart(sctx, {
+            type: 'bar',
+            data: {
+                labels: initSvcYears,
+                datasets: [
+                    { label: 'Ödenen (₺)', data: initSvcPaid },
+                    { label: 'Ödenmeyen (₺)', data: initSvcUnpaid }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Uygula butonu (template literal kullanmadan güvenli URL birleştirme)
+        document.getElementById('btnApply').addEventListener('click', async () => {
+            try {
+                const year = document.getElementById('ySelect').value;
+                const month = document.getElementById('mSelect').value;
+
+                const baseUrl = '@Url.Action("DashboardData", "Home")';
+                const url = baseUrl + '?year=' + encodeURIComponent(year) + '&month=' + encodeURIComponent(month);
+
+                const res = await fetch(url, { method: 'GET' });
+                if (!res.ok) throw new Error('İstek başarısız: ' + res.status);
+                const d = await res.json();
+
+                // Kartlar
+                document.getElementById('prodTotal').textContent = money(d.thisMonthProductTotal);
+                document.getElementById('prodCount').textContent = d.thisMonthProductCount;
+
+                document.getElementById('svcAll').textContent = d.serviceTotal;
+                document.getElementById('svcCompleted').textContent = d.serviceCompleted;
+                document.getElementById('svcOpen').textContent = d.serviceOpen;
+
+                document.getElementById('svcTotal').textContent = money(d.thisMonthServiceTotal);
+                document.getElementById('svcPaid').textContent = money(d.thisMonthServicePaid);
+                document.getElementById('svcUnpaid').textContent = money(d.thisMonthServiceUnpaid);
+
+                document.getElementById('topRetail').textContent = d.topRetailCustomerName ?? '—';
+                document.getElementById('topService').textContent = d.topServiceCustomerName ?? '—';
+
+                // Grafik verilerini güncelle
+                chartProducts.data.labels = d.productSalesByYear.map(x => x.year);
+                chartProducts.data.datasets[0].data = d.productSalesByYear.map(x => x.value);
+                chartProducts.update();
+
+                chartService.data.labels = d.serviceByYear.map(x => x.year);
+                chartService.data.datasets[0].data = d.serviceByYear.map(x => x.paid);
+                chartService.data.datasets[1].data = d.serviceByYear.map(x => x.unpaid);
+                chartService.update();
+            } catch (err) {
+                console.error(err);
+                alert('Veri alınırken bir sorun oluştu.');
+            }
+        });
+    </script>
+}
+

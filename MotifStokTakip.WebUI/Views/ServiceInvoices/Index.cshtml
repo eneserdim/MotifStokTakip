@@ -1,0 +1,59 @@
+﻿@model IEnumerable<MotifStokTakip.Model.Entities.ServiceInvoice>
+@{
+    ViewData["Title"] = "Faturalar";
+}
+<h3>@ViewData["Title"]</h3>
+
+<table class="table table-striped table-hover align-middle" class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Müşteri</th>
+            <th>Servis</th>
+            <th class="text-end">Toplam</th>
+            <th>Durum</th>
+            <th class="text-end"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var inv in Model)
+        {
+            <tr>
+                <td>@inv.Id</td>
+                <td>@inv.ServiceOrder.Customer.FullName</td>
+                <td>@inv.ServiceOrderId</td>
+                <td class="text-end">@inv.TotalAmount.ToString("N2") ₺</td>
+                <td>
+                    @if (!inv.IsPaid)
+                    {
+                        <span class="badge bg-warning text-dark">Ödeme Bekleniyor</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Ödeme Yapıldı</span>
+                    }
+                </td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-secondary" asp-action="Pdf" asp-route-id="@inv.Id">PDF</a>
+
+                    @if (User.IsInRole("Admin") || User.IsInRole("Muhasebe"))
+                    {
+                        <form asp-action="SetPaid" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@inv.Id" />
+                            @if (!inv.IsPaid)
+                            {
+                                <input type="hidden" name="paid" value="true" />
+                                <button class="btn btn-sm btn-success">Ödeme Yapıldı</button>
+                            }
+                            else
+                            {
+                                <input type="hidden" name="paid" value="false" />
+                                <button class="btn btn-sm btn-outline-warning">Ödemeyi Kaldır</button>
+                            }
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
