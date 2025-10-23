@@ -13,6 +13,9 @@
 
         // Opsiyonel: Eldeki barkodu saklayalım
         public string? Barcode { get; set; }
+        
+        // Kimden Alındı
+        public string? PurchasedFrom { get; set; }
     }
 
 

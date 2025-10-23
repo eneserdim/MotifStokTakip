@@ -150,6 +150,29 @@ namespace MotifStokTakip.WebUI.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePlate(int id)
+        {
+            var v = await _db.Vehicles
+                .Include(x => x.ServiceOrders)
+                .FirstOrDefaultAsync(x => x.Id == id);
+            
+            if (v == null) return NotFound();
+
+            // Delete related ServiceOrders (hard delete with cascade)
+            if (v.ServiceOrders != null && v.ServiceOrders.Any())
+            {
+                _db.ServiceOrders.RemoveRange(v.ServiceOrders);
+            }
+
+            // Delete the vehicle
+            _db.Vehicles.Remove(v);
+            await _db.SaveChangesAsync();
+
+            TempData["ok"] = "Araç ve ilgili servis kayıtları silindi.";
+            return RedirectToAction(nameof(Index));
+        }
+
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {

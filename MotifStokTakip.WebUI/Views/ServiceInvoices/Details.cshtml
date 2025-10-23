@@ -37,7 +37,21 @@
            asp-controller="ServiceOrders"
            asp-action="InvoicePdf"
            asp-route-id="@Model.InvoiceId"
-           target="_blank" rel="noopener">PDF</a>
+           target="_blank" rel="noopener">PDF (Varsayılan)</a>
+
+        <a class="btn btn-outline-primary"
+           asp-controller="ServiceOrders"
+           asp-action="InvoicePdf"
+           asp-route-id="@Model.InvoiceId"
+           asp-route-format="cari"
+           target="_blank" rel="noopener">Yazdır (Cari)</a>
+
+        <a class="btn btn-outline-success"
+           asp-controller="ServiceOrders"
+           asp-action="InvoicePdf"
+           asp-route-id="@Model.InvoiceId"
+           asp-route-format="firma"
+           target="_blank" rel="noopener">Yazdır (Firma)</a>
     </div>
 </div>
 

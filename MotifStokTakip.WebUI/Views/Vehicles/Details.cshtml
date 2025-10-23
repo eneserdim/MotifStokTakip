@@ -33,5 +33,40 @@
     <div class="mt-2 d-flex gap-2">
         <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Düzenle</a>
         <a class="btn btn-outline-secondary" asp-action="Index">Liste</a>
+        
+        <!-- DeletePlate button with confirmation -->
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deletePlateModal">
+            Plaka ve Servisleri Sil
+        </button>
+    </div>
+</div>
+
+<!-- Delete Plate Confirmation Modal -->
+<div class="modal fade" id="deletePlateModal" tabindex="-1" aria-labelledby="deletePlateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePlateModalLabel">Plaka ve Servisleri Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>DİKKAT:</strong> Bu işlem aracı ve tüm ilişkili servis kayıtlarını kalıcı olarak silecektir.</p>
+                <p>Plaka: <strong>@Model.Plate</strong></p>
+                <p>Araç: <strong>@Model.Brand @Model.Model</strong></p>
+                @if (Model.ServiceOrders != null && Model.ServiceOrders.Any())
+                {
+                    <p class="text-danger">Bu araçla ilişkili <strong>@Model.ServiceOrders.Count</strong> servis kaydı silinecektir.</p>
+                }
+                <p>Bu işlem geri alınamaz. Devam etmek istediğinizden emin misiniz?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <form asp-action="DeletePlate" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>

@@ -192,15 +192,36 @@
         });
 
         // Üst barkod alanı: yeni satır ekleyip doldur
-        document.getElementById('scan').addEventListener('keydown', async (e) => {
+        const scanInput = document.getElementById('scan');
+        let scanDebounceTimer = null;
+
+        // Function to add a new row with barcode
+        async function addRowWithBarcode(code) {
+            if (!code) return;
+            rows.insertAdjacentHTML('beforeend', tpl.replaceAll('__idx__', idx++));
+            const row = rows.lastElementChild;
+            await fillRowFromBarcode(row, code);
+            scanInput.value = '';
+        }
+
+        // Auto-submit after 1 second of inactivity
+        scanInput.addEventListener('input', (e) => {
+            if (scanDebounceTimer) clearTimeout(scanDebounceTimer);
+            scanDebounceTimer = setTimeout(async () => {
+                const code = scanInput.value.trim();
+                if (code) {
+                    await addRowWithBarcode(code);
+                }
+            }, 1000);
+        });
+
+        // Keep Enter handler as-is
+        scanInput.addEventListener('keydown', async (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                if (scanDebounceTimer) clearTimeout(scanDebounceTimer);
                 const code = e.target.value.trim();
-                if (!code) return;
-                rows.insertAdjacentHTML('beforeend', tpl.replaceAll('__idx__', idx++));
-                const row = rows.lastElementChild;
-                await fillRowFromBarcode(row, code);
-                e.target.value = '';
+                await addRowWithBarcode(code);
             }
         });
 

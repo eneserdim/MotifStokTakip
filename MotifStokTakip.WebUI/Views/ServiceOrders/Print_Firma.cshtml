@@ -1,0 +1,134 @@
+@model MotifStokTakip.Model.Entities.ServiceInvoice
+@{
+    Layout = null;
+    var order = Model.ServiceOrder!;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Servis Faturası (Firma) - #@Model.Id</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            font-size: 14px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .info-section {
+            flex: 1;
+        }
+        .label {
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .text-end {
+            text-align: right;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .text-muted {
+            color: #666;
+            font-size: 0.9em;
+        }
+        @@media print {
+            body {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Motif Otomotiv - Servis Faturası (Firma)</h1>
+
+    <div class="header-info">
+        <div class="info-section">
+            <div><span class="label">Fatura No:</span> @Model.Id</div>
+            <div><span class="label">Tarih:</span> @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+            <div><span class="label">Müşteri:</span> @order.Customer?.FullName</div>
+            @if (!string.IsNullOrWhiteSpace(order.Customer?.CompanyName))
+            {
+                <div><span class="label">Firma:</span> @order.Customer.CompanyName</div>
+            }
+            <div><span class="label">Telefon:</span> @order.Customer?.Phone</div>
+        </div>
+        <div class="info-section">
+            <div><span class="label">Araç:</span> @order.Vehicle?.Plate</div>
+            <div><span class="label">Marka/Model:</span> @order.Vehicle?.Brand @order.Vehicle?.Model</div>
+            <div><span class="label">Model Yılı:</span> @order.Vehicle?.Year</div>
+            @if (!string.IsNullOrWhiteSpace(order.Vehicle?.Vin))
+            {
+                <div><span class="label">Şasi No:</span> @order.Vehicle.Vin</div>
+            }
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Kalem/Ürün</th>
+                <th>Kimden Alındı</th>
+                <th class="text-end">Adet</th>
+                <th class="text-end">Alış Fiyatı</th>
+                <th class="text-end">Satış Fiyatı</th>
+                <th class="text-end">Tutar</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            @item.ItemName
+                        </td>
+                        <td class="text-muted">
+                            @(item.Product?.PurchasedFrom ?? "—")
+                        </td>
+                        <td class="text-end">@item.Quantity</td>
+                        <td class="text-end">@item.CostPrice.ToString("N2") ₺</td>
+                        <td class="text-end">@item.SalePrice.ToString("N2") ₺</td>
+                        <td class="text-end">@((item.Quantity * item.SalePrice).ToString("N2")) ₺</td>
+                    </tr>
+                }
+            }
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="5" class="text-end">Genel Toplam:</td>
+                <td class="text-end">@Model.Items!.Sum(i => i.Quantity * i.SalePrice).ToString("N2") ₺</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

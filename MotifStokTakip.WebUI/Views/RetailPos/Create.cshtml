@@ -225,20 +225,40 @@
         }
 
         /* Üst taraftaki hızlı barkod alanı */
-        scan?.addEventListener('keydown', async (e) => {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
-            const code = scan.value.trim();
+        let scanDebounceTimer = null;
+
+        // Function to process barcode scan
+        async function processBarcodeScanner(code) {
             if (!code) return;
 
             // aynı barkod varsa artır
             if (tryIncreaseQuantityIfExists(code)) { scan.value = ''; return; }
 
             const p = await fetchByBarcode(code);
-            if (!p) { alert('Barkod bulunamadı'); return; }
+            if (!p) { alert('Barkod bulunamadı'); scan.value = ''; return; }
 
             addRowFromProduct(p);
             scan.value = '';
+        }
+
+        // Auto-submit after 1 second of inactivity
+        scan?.addEventListener('input', (e) => {
+            if (scanDebounceTimer) clearTimeout(scanDebounceTimer);
+            scanDebounceTimer = setTimeout(async () => {
+                const code = scan.value.trim();
+                if (code) {
+                    await processBarcodeScanner(code);
+                }
+            }, 1000);
+        });
+
+        // Keep Enter handler as-is
+        scan?.addEventListener('keydown', async (e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            if (scanDebounceTimer) clearTimeout(scanDebounceTimer);
+            const code = scan.value.trim();
+            await processBarcodeScanner(code);
         });
 
         /* Satır içindeki barkod kutusunda Enter/blur ile doldurma */

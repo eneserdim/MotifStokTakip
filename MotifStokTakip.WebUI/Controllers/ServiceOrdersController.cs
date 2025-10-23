@@ -425,17 +425,28 @@ public class ServiceOrdersController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> InvoicePdf(int id)
+    public async Task<IActionResult> InvoicePdf(int id, string? format = null)
     {
         var inv = await _db.ServiceInvoices
             .Include(i => i.ServiceOrder)!.ThenInclude(o => o.Customer)
             .Include(i => i.ServiceOrder)!.ThenInclude(o => o.Vehicle)
             .Include(i => i.ServiceOrder)!.ThenInclude(o => o.AssignedUser)
-            .Include(i => i.Items)
+            .Include(i => i.Items)!.ThenInclude(item => item.Product)
             .FirstOrDefaultAsync(i => i.Id == id);
 
         if (inv == null) return NotFound();
 
+        // If format is specified, use print views instead of PDF generator
+        if (format == "cari")
+        {
+            return View("Print_Cari", inv);
+        }
+        else if (format == "firma")
+        {
+            return View("Print_Firma", inv);
+        }
+
+        // Default: use the existing PDF generator
         var bytes = InvoicePdfGenerator.Generate(inv);
         return File(bytes, "application/pdf", $"ServisFaturasi_{id}.pdf");
     }
@@ -500,5 +511,19 @@ public class ServiceOrdersController : Controller
         await _db.SaveChangesAsync();
         TempData["ok"] = "Usta kaldırıldı.";
         return RedirectToAction("Details", new { id });
+    }
+
+    // -------- Print Complaint --------
+    [HttpGet]
+    public async Task<IActionResult> PrintComplaint(int id)
+    {
+        var order = await _db.ServiceOrders
+            .Include(x => x.Customer)
+            .Include(x => x.Vehicle)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (order == null) return NotFound();
+
+        return View(order);
     }
 }

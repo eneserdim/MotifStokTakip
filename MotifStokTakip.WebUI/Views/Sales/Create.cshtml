@@ -115,31 +115,51 @@
 
         // barkod input
         const scan = document.getElementById('scan');
+        let debounceTimer = null;
+
+        // Function to add product row
+        async function addProductRow(code) {
+            if (!code) return;
+            const r = await fetch('@Url.Action("FindProduct", "Sales")?barcode=' + encodeURIComponent(code));
+            const data = await r.json();
+            // yeni satır ekle
+            const html = tpl.replaceAll('__idx__', idx);
+            rows.insertAdjacentHTML('beforeend', html);
+            const row = rows.lastElementChild;
+            if (data) {
+                row.querySelector('[name$=".ProductId"]').value = data.id;
+                row.querySelector('[name$=".ProductName"]').value = data.name;
+                row.querySelector('[name$=".UnitPrice"]').value = data.price;
+                row.querySelector('[name$=".Barcode"]').value = code;
+                row.querySelector('[name$=".Quantity"]').value = 1;
+            } else {
+                row.querySelector('[name$=".ProductName"]').value = code; // serbest kalem
+                row.querySelector('[name$=".Quantity"]').value = 1;
+                row.querySelector('[name$=".UnitPrice"]').value = 0;
+            }
+            idx++;
+            scan.value = '';
+            recalc();
+        }
+
+        // Auto-submit after 1 second of inactivity
+        scan.addEventListener('input', (e) => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                const code = scan.value.trim();
+                if (code) {
+                    await addProductRow(code);
+                }
+            }, 1000);
+        });
+
+        // Keep Enter handler as-is
         scan.addEventListener('keydown', async (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                if (debounceTimer) clearTimeout(debounceTimer);
                 const code = scan.value.trim();
-                if (!code) return;
-                const r = await fetch('@Url.Action("FindProduct", "Sales")?barcode=' + encodeURIComponent(code));
-                const data = await r.json();
-                // yeni satır ekle
-                const html = tpl.replaceAll('__idx__', idx);
-                rows.insertAdjacentHTML('beforeend', html);
-                const row = rows.lastElementChild;
-                if (data) {
-                    row.querySelector('[name$=".ProductId"]').value = data.id;
-                    row.querySelector('[name$=".ProductName"]').value = data.name;
-                    row.querySelector('[name$=".UnitPrice"]').value = data.price;
-                    row.querySelector('[name$=".Barcode"]').value = code;
-                    row.querySelector('[name$=".Quantity"]').value = 1;
-                } else {
-                    row.querySelector('[name$=".ProductName"]').value = code; // serbest kalem
-                    row.querySelector('[name$=".Quantity"]').value = 1;
-                    row.querySelector('[name$=".UnitPrice"]').value = 0;
-                }
-                idx++;
-                scan.value = '';
-                recalc();
+                await addProductRow(code);
             }
         });
     </script>

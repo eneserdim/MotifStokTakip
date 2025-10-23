@@ -44,7 +44,12 @@
                 </div>
             </div>
             <hr />
-            <div class="mb-2 text-muted">Şikayet</div>
+            <div class="mb-2 text-muted d-flex justify-content-between align-items-center">
+                <span>Şikayet</span>
+                <a class="btn btn-sm btn-outline-primary" href="@Url.Action("PrintComplaint", new { id = Model.Id })" target="_blank">
+                    Şikayeti Yazdır
+                </a>
+            </div>
             <div class="p-2 bg-light rounded">@Model.ComplaintText</div>
             @if (!string.IsNullOrWhiteSpace(Model.DoneWorksText))
             {

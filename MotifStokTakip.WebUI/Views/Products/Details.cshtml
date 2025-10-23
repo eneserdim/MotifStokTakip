@@ -47,6 +47,7 @@
               <div><div class="label">Raf No</div><div class="value">@Model.ShelfNo</div></div>
               <div><div class="label">Stok</div><div class="value">@Model.StockQuantity</div></div>
               <div><div class="label">Alış Fiyatı</div><div class="value">@Model.PurchasePrice</div></div>
+              <div><div class="label">Kimden Alındı</div><div class="value">@(!string.IsNullOrWhiteSpace(Model.PurchasedFrom) ? Model.PurchasedFrom : "—")</div></div>
               <div><div class="label">Oluşturulma</div><div class="value">@Model.CreatedAt.ToLocalTime()</div></div>
               <div><div class="label">Güncellenme</div><div class="value">@Model.UpdatedAt?.ToLocalTime()</div></div>
               <div>
