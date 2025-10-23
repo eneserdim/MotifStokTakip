@@ -12,6 +12,9 @@
 
         // Opsiyonel: Barkod (scanner ile okutulabilir)
         public string? Barcode { get; set; }
+        
+        // Kimden Alındı
+        public string? PurchasedFrom { get; set; }
     }
 
 

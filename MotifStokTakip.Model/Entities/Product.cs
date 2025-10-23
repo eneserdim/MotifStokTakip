@@ -12,6 +12,7 @@ public class Product : BaseEntity
     public string? Barcode { get; set; }                  // Manuel girilmezse üretilecek
     public string ShelfNo { get; set; } = null!;
     public int StockQuantity { get; set; }                // Stok Miktarı
+    public string? PurchasedFrom { get; set; }            // Kimden Alındı
 
     public byte[]? RowVersion { get; set; }   // concurrency token
 

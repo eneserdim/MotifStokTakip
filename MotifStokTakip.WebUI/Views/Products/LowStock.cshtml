@@ -2,6 +2,10 @@
 @{
     ViewData["Title"] = "Düşük Stok";
     var threshold = (int)(ViewBag.Threshold ?? 10);
+    var page = (int)(ViewBag.Page ?? 1);
+    var pageSize = (int)(ViewBag.PageSize ?? 10);
+    var total = (int)(ViewBag.Total ?? 0);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
 }
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Düşük Stok ( < @threshold )</h4>
@@ -15,7 +19,7 @@
     <thead><tr><th>#</th><th>Ad</th><th>Barkod</th><th>Stok</th><th>Alış</th></tr></thead>
     <tbody>
         @{
-            var i = 1;
+            var i = (page - 1) * pageSize + 1;
             foreach (var p in Model)
             {
                 <tr>
@@ -30,3 +34,34 @@
         }
     </tbody>
 </table>
+
+@if (totalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center">
+            @if (page > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?threshold=@threshold&page=@(page - 1)">Önceki</a>
+                </li>
+            }
+
+            @for (int p = 1; p <= totalPages; p++)
+            {
+                <li class="page-item @(p == page ? "active" : "")">
+                    <a class="page-link" href="?threshold=@threshold&page=@p">@p</a>
+                </li>
+            }
+
+            @if (page < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?threshold=@threshold&page=@(page + 1)">Sonraki</a>
+                </li>
+            }
+        </ul>
+    </nav>
+    <div class="text-center text-muted">
+        Toplam @total kayıt, Sayfa @page / @totalPages
+    </div>
+}

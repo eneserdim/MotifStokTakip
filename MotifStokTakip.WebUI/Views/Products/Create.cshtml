@@ -37,6 +37,11 @@
         <input asp-for="PurchasePrice" class="form-control" />
         <span asp-validation-for="PurchasePrice" class="text-danger"></span>
     </div>
+    <div class="col-md-4">
+        <label class="form-label">Kimden Alındı</label>
+        <input asp-for="PurchasedFrom" class="form-control" maxlength="250" />
+        <span asp-validation-for="PurchasedFrom" class="text-danger"></span>
+    </div>
     <div class="col-md-6">
         <label class="form-label">Raf No</label>
         <input asp-for="ShelfNo" class="form-control" />

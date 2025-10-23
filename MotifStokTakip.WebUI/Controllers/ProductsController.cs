@@ -95,7 +95,8 @@ public class ProductsController : Controller
             PurchasePrice = vm.PurchasePrice,
             ShelfNo = vm.ShelfNo,
             StockQuantity = vm.StockQuantity,
-            Barcode = sanitizedBarcode // kullanıcı girdiyse sakla; boşsa null
+            Barcode = sanitizedBarcode, // kullanıcı girdiyse sakla; boşsa null
+            PurchasedFrom = string.IsNullOrWhiteSpace(vm.PurchasedFrom) ? null : vm.PurchasedFrom.Trim()
         };
 
 
@@ -124,7 +125,8 @@ public class ProductsController : Controller
             PurchasePrice = x.PurchasePrice,
             ShelfNo = x.ShelfNo,
             StockQuantity = x.StockQuantity,
-            Barcode = x.Barcode
+            Barcode = x.Barcode,
+            PurchasedFrom = x.PurchasedFrom
         };
         return View(vm);
     }
@@ -145,6 +147,7 @@ public class ProductsController : Controller
         x.ShelfNo = vm.ShelfNo;
         x.StockQuantity = vm.StockQuantity;
         x.Barcode = string.IsNullOrWhiteSpace(vm.Barcode) ? null : vm.Barcode!.Trim();
+        x.PurchasedFrom = string.IsNullOrWhiteSpace(vm.PurchasedFrom) ? null : vm.PurchasedFrom.Trim();
         x.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -277,6 +280,17 @@ public class ProductsController : Controller
             .FirstOrDefaultAsync(x => x.Id == id);
         if (p == null) return NotFound();
 
+        // Check if barcode image exists
+        string? barcodeImgUrl = null;
+        if (!string.IsNullOrWhiteSpace(p.Barcode))
+        {
+            var barcodeFilePath = Path.Combine(_env.WebRootPath, "barcodes", $"{p.Id}.png");
+            if (System.IO.File.Exists(barcodeFilePath))
+            {
+                barcodeImgUrl = Url.Content($"~/barcodes/{p.Id}.png?v={DateTime.UtcNow.Ticks}");
+            }
+        }
+
         var vm = new ProductDetailViewModel
         {
             Id = p.Id,
@@ -288,7 +302,8 @@ public class ProductsController : Controller
             ShelfNo = p.ShelfNo,
             StockQuantity = p.StockQuantity,
             Barcode = p.Barcode,
-            BarcodeImgUrl = string.IsNullOrWhiteSpace(p.Barcode) ? null : Url.Content($"~/barcodes/{p.Id}.png?v={DateTime.UtcNow.Ticks}"),
+            BarcodeImgUrl = barcodeImgUrl,
+            PurchasedFrom = p.PurchasedFrom,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt,
             TotalSoldQty = p.SaleItems?.Sum(i => i.Quantity) ?? 0,
@@ -299,14 +314,27 @@ public class ProductsController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> LowStock(int threshold = 10)
+    public async Task<IActionResult> LowStock(int threshold = 10, int page = 1)
     {
-        var list = await _db.Products
+        const int PageSize = 10;
+
+        var qry = _db.Products
             .Where(p => p.StockQuantity < threshold)
             .OrderBy(p => p.StockQuantity)
+            .AsQueryable();
+
+        var total = await qry.CountAsync();
+        var list = await qry
+            .Skip((page - 1) * PageSize)
+            .Take(PageSize)
             .ToListAsync();
 
         ViewBag.Threshold = threshold;
+        ViewBag.Page = page;
+        ViewBag.PageSize = PageSize;
+        ViewBag.Total = total;
+        ViewBag.TotalPages = (int)Math.Ceiling(total / (double)PageSize);
+
         return View(list);
     }
 

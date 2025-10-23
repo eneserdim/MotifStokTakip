@@ -14,6 +14,7 @@ public class ProductDetailViewModel
     public int StockQuantity { get; set; }
     public string? Barcode { get; set; }
     public string? BarcodeImgUrl { get; set; }
+    public string? PurchasedFrom { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
